@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const API_URL = 'https://proyectosoftwareseguro.netlify.app/api/usuarios';
+    const API_URL = '/.netlify/functions/usuarios';
     let paginaActual = 1;
     const ITEMS_POR_PAGINA = 10;
 
