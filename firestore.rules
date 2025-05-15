@@ -1,27 +1,66 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Funciones de utilidad
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isValidString(value) {
+      return value is string && value.size() > 0 && value.size() < 500;
+    }
+
+    function isValidEmail(email) {
+      return email.matches('^[^@]+@[^@]+\\.[^@]+$');
+    }
+
+    function isValidDNI(dni) {
+      return dni.matches('^[0-9]+$') && dni.size() >= 8 && dni.size() <= 20;
+    }
+
     // Reglas para la colección de usuarios
     match /usuarios/{dni} {
       // Permitir lectura si el usuario está autenticado
-      allow read: if request.auth != null;
+      allow read: if isAuthenticated();
       
-      // Permitir escritura si el usuario está autenticado y los datos son válidos
-      allow write: if request.auth != null
-        && validarDatosUsuario(request.resource.data);
+      // Permitir creación si los datos son válidos
+      allow create: if isAuthenticated()
+        && validarDatosUsuarioCreacion(request.resource.data);
+      
+      // Permitir actualización si los datos son válidos
+      allow update: if isAuthenticated()
+        && validarDatosUsuarioActualizacion(request.resource.data);
+      
+      // Permitir eliminación si el usuario está autenticado
+      allow delete: if isAuthenticated();
+      
+      // Función para validar datos en la creación
+      function validarDatosUsuarioCreacion(data) {
+        return data.keys().hasAll(['dni', 'nombre', 'apellidos', 'email', 'createdAt'])
+          && isValidDNI(data.dni)
+          && isValidString(data.nombre)
+          && isValidString(data.apellidos)
+          && isValidEmail(data.email)
+          && data.createdAt is timestamp;
+      }
+      
+      // Función para validar datos en la actualización
+      function validarDatosUsuarioActualizacion(data) {
+        let hasValidFields = true;
+        
+        // Validar campos opcionales si están presentes
+        if ('nombre' in data) { hasValidFields = hasValidFields && isValidString(data.nombre); }
+        if ('apellidos' in data) { hasValidFields = hasValidFields && isValidString(data.apellidos); }
+        if ('email' in data) { hasValidFields = hasValidFields && isValidEmail(data.email); }
+        if ('updatedAt' in data) { hasValidFields = hasValidFields && data.updatedAt is timestamp; }
+        
+        return hasValidFields;
+      }
     }
     
-    // Función para validar los datos del usuario
-    function validarDatosUsuario(data) {
-      return data.keys().hasAll(['dni', 'nombre', 'apellidos', 'email'])
-        && data.dni is string
-        && data.dni.matches('^[0-9]+$')
-        && data.nombre is string
-        && data.nombre.size() > 0
-        && data.apellidos is string
-        && data.apellidos.size() > 0
-        && data.email is string
-        && data.email.matches('^[^@]+@[^@]+\\.[^@]+$');
+    // Regla por defecto - denegar todo lo demás
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 } 
