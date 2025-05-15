@@ -1,21 +1,94 @@
 document.addEventListener('DOMContentLoaded', function() {
+    const API_URL = 'https://proyectosoftwareseguro.netlify.app/api/usuarios';
+    let paginaActual = 1;
+    const ITEMS_POR_PAGINA = 10;
+
     // Función para validar el email
     function isValidEmail(email) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
-    // Función para validar el DNI (asumiendo que debe ser numérico)
+    // Función para validar el DNI
     function isValidDNI(dni) {
         return /^\d+$/.test(dni);
     }
 
-    // Función para mostrar mensajes de error
-    function showError(message) {
-        console.error(message);
-        alert(message);
+    // Función para mostrar mensajes
+    function showMessage(message, isError = false, elementId = 'mensajeRegistro') {
+        const alertElement = document.getElementById(elementId);
+        alertElement.textContent = message;
+        alertElement.className = `alert ${isError ? 'alert-danger' : 'alert-success'}`;
+        alertElement.style.display = 'block';
+        setTimeout(() => {
+            alertElement.style.display = 'none';
+        }, 3000);
     }
 
-    window.guardar = function(event) {
+    // Función para renderizar la tabla de usuarios
+    function renderizarTablaUsuarios(usuarios) {
+        const tabla = document.getElementById('tablaUsuarios');
+        tabla.innerHTML = '';
+
+        usuarios.forEach(usuario => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${usuario.dni}</td>
+                <td>${usuario.nombre}</td>
+                <td>${usuario.apellidos}</td>
+                <td>${usuario.email}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="editarUsuario('${usuario.dni}')">
+                        Editar
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarUsuario('${usuario.dni}')">
+                        Eliminar
+                    </button>
+                </td>
+            `;
+            tabla.appendChild(tr);
+        });
+    }
+
+    // Función para renderizar la paginación
+    function renderizarPaginacion(paginacion) {
+        const paginacionElement = document.getElementById('paginacion');
+        paginacionElement.innerHTML = '';
+
+        // Botón Anterior
+        const anterior = document.createElement('li');
+        anterior.className = `page-item ${paginacion.pagina === 1 ? 'disabled' : ''}`;
+        anterior.innerHTML = `
+            <a class="page-link" href="#" onclick="cambiarPagina(${paginacion.pagina - 1})">
+                Anterior
+            </a>
+        `;
+        paginacionElement.appendChild(anterior);
+
+        // Páginas
+        for (let i = 1; i <= paginacion.totalPaginas; i++) {
+            const pagina = document.createElement('li');
+            pagina.className = `page-item ${i === paginacion.pagina ? 'active' : ''}`;
+            pagina.innerHTML = `
+                <a class="page-link" href="#" onclick="cambiarPagina(${i})">
+                    ${i}
+                </a>
+            `;
+            paginacionElement.appendChild(pagina);
+        }
+
+        // Botón Siguiente
+        const siguiente = document.createElement('li');
+        siguiente.className = `page-item ${paginacion.pagina === paginacion.totalPaginas ? 'disabled' : ''}`;
+        siguiente.innerHTML = `
+            <a class="page-link" href="#" onclick="cambiarPagina(${paginacion.pagina + 1})">
+                Siguiente
+            </a>
+        `;
+        paginacionElement.appendChild(siguiente);
+    }
+
+    // Guardar usuario
+    window.guardar = async function(event) {
         event.preventDefault();
         
         const dni = document.getElementById("dni").value;
@@ -23,97 +96,159 @@ document.addEventListener('DOMContentLoaded', function() {
         const apellidos = document.getElementById("apellidos").value;
         const email = document.getElementById("correo").value;
 
-        // Validaciones
         if (!isValidDNI(dni)) {
-            showError("El DNI debe contener solo números");
+            showMessage("El DNI debe contener solo números", true);
             return;
         }
 
         if (!isValidEmail(email)) {
-            showError("Por favor, ingrese un email válido");
+            showMessage("Por favor, ingrese un email válido", true);
             return;
         }
 
-        const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-    
-        const raw = JSON.stringify({
-            "dni": dni,
-            "nombre": nombre,
-            "apellidos": apellidos,
-            "email": email
-        });
-    
-        const requestOptions = {
-            method: "POST",
-            headers: myHeaders,
-            body: raw,
-            redirect: "follow"
-        };
-    
-        fetch("https://proyectosoftwareseguro.netlify.app/", requestOptions)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Error en la respuesta del servidor');
-                }
-                return response.text();
-            })
-            .then(result => {
-                console.log(result);
-                alert('Usuario guardado exitosamente');
-                document.getElementById("adicionarEstudiante").reset();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showError('Error al guardar el usuario: ' + error.message);
-            });
-    };
-    
-    window.cargar = function(resultado) {
         try {
-            const transformado = JSON.parse(resultado);
-            let salida = "<table border='1'><tr><th>Campo</th><th>Valor</th></tr>";
-            
-            for (const [clave, valor] of Object.entries(transformado)) {
-                salida += `<tr><td>${clave}</td><td>${valor}</td></tr>`;
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    dni,
+                    nombre,
+                    apellidos,
+                    email
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al guardar el usuario');
             }
-            salida += "</table>";
-            document.getElementById("rta").innerHTML = salida;
+
+            const result = await response.json();
+            showMessage(result.message || 'Usuario guardado exitosamente');
+            document.getElementById("adicionarEstudiante").reset();
+            
+            // Actualizar la lista de usuarios
+            buscarUsuarios();
         } catch (error) {
-            console.error('Error al procesar el resultado:', error);
-            document.getElementById("rta").innerHTML = 'Error al procesar los datos';
-            showError('Error al procesar los datos del usuario');
+            showMessage('Error: ' + error.message, true);
         }
     };
-    
-    window.listar = function(event) {
-        event.preventDefault();
-        
-        const ndoc = document.getElementById("numdoc").value;
-        
-        if (!isValidDNI(ndoc)) {
-            showError("El documento debe contener solo números");
+
+    // Buscar usuarios
+    window.buscarUsuarios = async function(pagina = 1) {
+        const termino = document.getElementById('terminoBusqueda').value;
+        paginaActual = pagina;
+
+        try {
+            let url = `${API_URL}?pagina=${pagina}&limite=${ITEMS_POR_PAGINA}`;
+            if (termino) {
+                url += `&buscar=${encodeURIComponent(termino)}`;
+            }
+
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('Error al buscar usuarios');
+            }
+
+            const data = await response.json();
+            renderizarTablaUsuarios(data.usuarios);
+            renderizarPaginacion(data.paginacion);
+        } catch (error) {
+            showMessage(error.message, true, 'mensajeBusqueda');
+        }
+    };
+
+    // Cambiar página
+    window.cambiarPagina = function(pagina) {
+        buscarUsuarios(pagina);
+    };
+
+    // Editar usuario
+    window.editarUsuario = async function(dni) {
+        try {
+            const response = await fetch(`${API_URL}/${dni}`);
+            if (!response.ok) {
+                throw new Error('Usuario no encontrado');
+            }
+
+            const usuario = await response.json();
+            
+            // Llenar el modal con los datos del usuario
+            document.getElementById('editDni').value = usuario.dni;
+            document.getElementById('editNombre').value = usuario.nombre;
+            document.getElementById('editApellidos').value = usuario.apellidos;
+            document.getElementById('editEmail').value = usuario.email;
+
+            // Mostrar el modal
+            const modal = new bootstrap.Modal(document.getElementById('editarUsuarioModal'));
+            modal.show();
+        } catch (error) {
+            showMessage(error.message, true);
+        }
+    };
+
+    // Actualizar usuario
+    window.actualizarUsuario = async function() {
+        const dni = document.getElementById('editDni').value;
+        const datos = {
+            nombre: document.getElementById('editNombre').value,
+            apellidos: document.getElementById('editApellidos').value,
+            email: document.getElementById('editEmail').value
+        };
+
+        try {
+            const response = await fetch(`${API_URL}/${dni}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(datos)
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al actualizar el usuario');
+            }
+
+            const result = await response.json();
+            showMessage(result.message || 'Usuario actualizado exitosamente');
+            
+            // Cerrar el modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editarUsuarioModal'));
+            modal.hide();
+            
+            // Actualizar la lista de usuarios
+            buscarUsuarios(paginaActual);
+        } catch (error) {
+            showMessage(error.message, true);
+        }
+    };
+
+    // Eliminar usuario
+    window.eliminarUsuario = async function(dni) {
+        if (!confirm('¿Está seguro de que desea eliminar este usuario?')) {
             return;
         }
 
-        const requestOptions = {
-            method: "GET",
-            redirect: "follow"
-        };
-        
-        document.getElementById("rta").innerHTML = 'Buscando...';
-        
-        fetch("https://proyectosoftwareseguro.netlify.app/" + ndoc, requestOptions)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Usuario no encontrado');
-                }
-                return response.text();
-            })
-            .then(result => window.cargar(result))
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById("rta").innerHTML = 'Error: ' + error.message;
+        try {
+            const response = await fetch(`${API_URL}/${dni}`, {
+                method: 'DELETE'
             });
+
+            if (!response.ok) {
+                throw new Error('Error al eliminar el usuario');
+            }
+
+            const result = await response.json();
+            showMessage(result.message || 'Usuario eliminado exitosamente');
+            
+            // Actualizar la lista de usuarios
+            buscarUsuarios(paginaActual);
+        } catch (error) {
+            showMessage(error.message, true);
+        }
     };
+
+    // Cargar usuarios inicialmente
+    buscarUsuarios();
 });

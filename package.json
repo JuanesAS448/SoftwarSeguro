@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "npm install",
-    "dev": "netlify dev",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node backend/index.js",
+    "build": "npm install && npm run build:backend",
+    "build:backend": "cd backend && npm install",
+    "dev": "nodemon backend/index.js"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +17,10 @@
     "express": "^5.1.0",
     "firebase-admin": "^13.4.0",
     "serverless-http": "^3.2.0",
-    "netlify-cli": "^15.0.0"
+    "netlify-cli": "^15.0.0",
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
   }
 }
