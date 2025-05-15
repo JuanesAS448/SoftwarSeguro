@@ -1,11 +1,11 @@
-function guardar(){
- 
+function guardar(event){
+    event.preventDefault();
+    
     let apellidos='';
     let datoingresado = document.getElementById("correo").value;
  
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
-    event.preventDefault();
  
     let raw = JSON.stringify({
       "dni": document.getElementById("dni").value,
@@ -33,26 +33,23 @@ function cargar(resultado){
     var elemento="";
  
     for (const [clave, valor] of Object.entries(transformado)) {
-        //console.log(${clave}: ${valor});
         salida = "Clave=" + clave +  " Valor=" + valor + "<br>" + salida;
     }
     document.getElementById("rta").innerHTML = salida;
 }
  
-function listar(){
+function listar(event){
     event.preventDefault();
+    
     const requestOptions = {
       method: "GET",
       redirect: "follow"
     };
+    
     let ndoc = document.getElementById("numdoc").value;
-    //usuarios?id=user124
-         //https://proyectofinaldsws.netlify.app/.netlify/functions/usuarios
+    
     fetch("https://proyectosoftwareseguro.netlify.app/"+ndoc, requestOptions)
-      .then((response) =>
-        response.text())
-      .then((result) =>
-        cargar(result))
-      .catch((error) =>
-        console.error(error));
+      .then((response) => response.text())
+      .then((result) => cargar(result))
+      .catch((error) => console.error(error));
 }

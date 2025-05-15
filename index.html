@@ -1,46 +1,43 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<script type="text/javascript" src="./frontend/scriptusu.js"></script>
+    <meta charset="UTF-8">
+    <title>Gestión de Usuarios</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👤</text></svg>">
+    <script type="text/javascript" src="./frontend/scriptusu.js"></script>
 </head>
 <body>
- 
-<h1>Adicionar Usuario</h1>
-<div>
-<form id="adicionarEstudiante">
-<div>
-<label for="dni">Documento de identidad:</label>
-<input type="text" id="dni" placeHolder="" value="000000">
-<br>
- 
-            <label for="nombre">Nombres:</label>
-<input type="text" id="nombre" placeHolder="">
-<br>
- 
-            <label for="apellidos">Apellidos:</label>
-<input type="text" id="apellidos" placeHolder="">
-<br>
- 
-            <label for="correo">Email:</label>
-<input type="text" id="correo" placeHolder="" value="">
-<br>
-<br>
-<br>
-<input type="submit" onclick="guardar()" value="Aceptar">
-</div>
-</form>
- 
-</div>
-<h1>Listar un usuario</h1>
-<div>
-<form id="listarEstudiantes">
-<label for="numdoc">Nombre del documento</label>
-<input type="text" id="numdoc">
-<p id="rta">Resultado:</p>
-<input type="submit" onclick="listar()" value="Aceptar">
-</form>
-</div>
- 
+    <h1>Adicionar Usuario</h1>
+    <div>
+        <form id="adicionarEstudiante" onsubmit="guardar(event)">
+            <div>
+                <label for="dni">Documento de identidad:</label>
+                <input type="text" id="dni" placeholder="" value="000000">
+                <br>
+                <label for="nombre">Nombres:</label>
+                <input type="text" id="nombre" placeholder="">
+                <br>
+                <label for="apellidos">Apellidos:</label>
+                <input type="text" id="apellidos" placeholder="">
+                <br>
+                <label for="correo">Email:</label>
+                <input type="text" id="correo" placeholder="" value="">
+                <br>
+                <br>
+                <br>
+                <input type="submit" value="Aceptar">
+            </div>
+        </form>
+    </div>
+
+    <h1>Listar un usuario</h1>
+    <div>
+        <form id="listarEstudiantes" onsubmit="listar(event)">
+            <label for="numdoc">Nombre del documento</label>
+            <input type="text" id="numdoc">
+            <p id="rta">Resultado:</p>
+            <input type="submit" value="Aceptar">
+        </form>
+    </div>
 </body>
 </html>
